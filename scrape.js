@@ -73,31 +73,34 @@ page.open('https://etherscan.io/tx/'+txHash, function() {
         if (response.to.contract_execution === false) // get contract error if there's any
             response.to.contract_error = page.evaluate(function(s) { return document.querySelector(s).parentElement.childNodes[10].innerText }, '#spanToAdd');
 
-        if (response.to.contract_execution === true) { // tokens transferred... logs
+        if (response.status == "Success") { // tokens transferred... logs
             response.to.tokens_transffered = {};
             response.to.tokens_transffered = page.evaluate(function() {
                 var elements = document.querySelectorAll('ul#wrapperContent > li div');
                 var logs = [];
-                for (var i = 0; i < elements.length; ++i) {
+                var startIndex = document.querySelector("#myTabContent").innerText.search("Transaction Action:") >= 0 ? 2 : 0;
+                for (var i = startIndex; i < elements.length; i++) {
                     var l = elements[i];
                     var from = l.childNodes[1].querySelector("span").getAttribute('data-original-title') || l.childNodes[1].querySelector("span").getAttribute('title');
                     var to = l.childNodes[3].querySelector("span").getAttribute('data-original-title') || l.childNodes[3].querySelector("span").getAttribute('title');
-                    var tokenNameIsLong = l.childNodes[9].firstElementChild !== null;
-                    var tokenName = tokenNameIsLong ? ( l.childNodes[9].firstElementChild.getAttribute('data-original-title') || l.childNodes[9].firstElementChild.getAttribute('title') ) + l.childNodes[9].childNodes[1].textContent : l.childNodes[9].innerText;
+                    var token = l.childNodes[9] || l.childNodes[8];
+                    var tokenNameIsLong = token.firstElementChild !== null;
+                    var tokenName = tokenNameIsLong ? ( token.firstElementChild.getAttribute('data-original-title') || token.firstElementChild.getAttribute('title') ) + token.childNodes[1].textContent : token.innerText;
                     var log = {
                         from: from.match(/\(([^)]+)\)/) ? from.match(/\(([^)]+)\)/)[1] : from,
                         to: to.match(/\(([^)]+)\)/) ? to.match(/\(([^)]+)\)/)[1] : to,
                         for: l.childNodes[5].querySelector('span').innerText,
                         currentPrice: l.childNodes[5].querySelector('span').getAttribute('data-original-title').replace(/ /g,'').replace("CurrentPrice:", ""),
                         exchangeRate: {
-                            current: l.childNodes[6].innerText.match(/\(([^)]+)\)/)[1],
-                            onThatDay: l.childNodes[6].getAttribute('value').match(/\(([^)]+)\)/)[1],
+                            current: (l.childNodes[6].innerText || l.childNodes[6].textContent).match(/\(([^)]+)\)/)[1],
+                            onThatDay: l.childNodes[6].textContent === null ? l.childNodes[6].getAttribute('value').match(/\(([^)]+)\)/)[1] : "",
                         },
                         tokenName: tokenName,
-                        tokenAddress: l.childNodes[9].getAttribute('href').replace('/token/', '')
+                        tokenAddress: token.getAttribute('href').replace('/token/', '')
                     };
                     logs.push(log);
                 }
+                console.log(logs);
                 return logs;
             });
         }
