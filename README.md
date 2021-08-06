@@ -1,4 +1,4 @@
-# Etherscan.io-Scraper
+# Etherscan.io Scraper
 Unofficial Etherscan.io scraper. Written in Javascript and based on Phantom.js.
 
 ## CLI usage::
